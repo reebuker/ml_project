@@ -1,9 +1,4 @@
-# import kagglehub
-# path = kagglehub.dataset_download("mohamedhanyyy/chest-ctscan-images")
+from dataset import get_data_loaders
 
-import torch
-
-print("Доступен граф. ускоритель?", torch.cuda.is_available())
-
-
-
+get_data_loaders()
+create_model()
