@@ -8,4 +8,8 @@ def create_model(num_of_classes=4):
     # Меняем финальный слой, чтобы иметь на выходе 4 класса
     model.fc = nn.Linear(in_features=model.fc.in_features, out_features=num_of_classes)
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    print("Выбрано вычислительное устройство:", device)
+
     return model
