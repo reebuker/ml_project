@@ -15,6 +15,7 @@ def get_data_loaders(batch_size=32):
 
     # Формируем абсолютные пути к папкам с данными
     train_dir = os.path.join(dataset_path, "Data/train")
+    valid_dir = os.path.join(dataset_path, "Data/valid")
     test_dir = os.path.join(dataset_path, "Data/test")
 
     transform = transforms.Compose([
@@ -28,10 +29,17 @@ def get_data_loaders(batch_size=32):
 
     # Загурзка данных из папок
     train_data = datasets.ImageFolder(root=train_dir, transform=transform)
+    valid_data = datasets.ImageFolder(root=valid_dir, transform=transform)
     test_data = datasets.ImageFolder(root=test_dir, transform=transform)
 
     # Создание загрузчиков данных
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    valid_loader = DataLoader(valid_data, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
 
-    return train_loader, test_loader
+    print(f"Выборки успешно загружены из папок:\n"
+          f"-> Train: {len(train_data)} картинок\n"
+          f"-> Valid: {len(valid_data)} картинок\n"
+          f"-> Test: {len(test_data)} картинок")
+
+    return train_loader, valid_loader, test_loader
