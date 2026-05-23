@@ -1,6 +1,6 @@
 services:
   pytorch-rocm:
-    image: rocm/pytorch:rocm7.2.2_ubuntu24.04_py3.12_pytorch_release_2.7.1 
+    build: .
     container_name: pytorch-rocm 
     tty: true             # Аналог флага -t 
     stdin_open: true      # Аналог флага -i 
@@ -16,9 +16,11 @@ services:
 
     volumes:
       - .:/workspace
+      - ~/.kaggle_cache:/root/.kaggle  # Сохраняем временные файлы загрузки
     working_dir: /workspace
 
     # Авторизация в Kaggle через env переменные
     environment:
       - KAGGLE_USERNAME=romanlednev
       - KAGGLE_KEY=1c9d02c48008cd5730ff1c38c3ca1e2d
+      - HSA_OVERRIDE_GFX_VERSION=10.3.0

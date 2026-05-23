@@ -8,3 +8,4 @@ class Trainer:
         self.history = {"train_loss": [], "val_loss": []}
 
     # def train_epoch(self, dataloader):
+    
