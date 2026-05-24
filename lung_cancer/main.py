@@ -6,9 +6,9 @@ from model import create_model
 from trainer import Trainer
 from evaluator import Evaluator
 
-save_path = "models/resnet18_weights.pth"
-learning_rate = 0.00005
-epochs=20
+save_path = "models/resnet50_weights.pth"
+learning_rate = 0.0005
+epochs=10
 batch_size=32
 
 def get_choice(question: str, valid_choices: list[int]) -> int:
