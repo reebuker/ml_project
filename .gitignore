@@ -3,7 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
-.DS_Store
+
+# Мои кастомные
+*.pth
+*.DS_Store
 
 # C extensions
 *.so

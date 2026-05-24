@@ -14,7 +14,7 @@ services:
     group_add:
       - video
 
-    volumes:
+    volumes: # <папка_на_хосте>:<папка_в_контейнере>
       - .:/workspace
       - ~/.kaggle_cache:/root/.kaggle  # Сохраняем временные файлы загрузки
     working_dir: /workspace

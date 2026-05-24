@@ -1,9 +1,18 @@
 import torch
-
+import os
 
 from dataset import get_data_loaders
 from model import create_model
 from trainer import Trainer
+from evaluator import Evaluator
+
+save_path = "models/resnet18_weights.pth"
+
+def get_choice(question: str, valid_choices: list[int]) -> int:
+    while True:
+        choice = int(input(question))
+        if choice in valid_choices:
+            return choice
 
 def main():
     train_loader, val_loader, test_loader = get_data_loaders()
@@ -12,23 +21,47 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Выбрано вычислительное устройство:", device)
 
-    criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    mode = get_choice(
+        question="Обучить модель / использовать сущ. параметры? [1/2]: ",
+        valid_choices=[1,2]
+    ) 
+    
+    # --- Блок обучения ---
+    if (mode == 1 or not os.path.exists(save_path)):
+        criterion = torch.nn.CrossEntropyLoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-    trainer = Trainer(
-        model=model,
-        device=device,
-        optimizer=optimizer,
-        criterion=criterion
+        trainer = Trainer(
+            model=model, device=device, optimizer=optimizer, criterion=criterion
+        )
+
+        print("Старт обучения...")
+        history = trainer.fit(
+            train_loader=train_loader,
+            val_loader=val_loader,
+            epochs=10
+        )
+        print("Обучение завершено!")
+
+    # --- Блок загрузки ---
+    if (mode == 2):
+        print("Загружаем веса модели...")
+        model.load_state_dict(torch.load(save_path))
+
+    print("Тестируем модель...")
+    evaluator = Evaluator(model=model, device=device)
+    labels, preds = evaluator.evaluate(test_loader)
+    evaluator.print_metricks(labels, preds)
+
+    mode = get_choice(
+        question="Сохранить результат обучения / Продолжить без сохранения? [1/2]: ",
+        valid_choices=[1,2]
     )
 
-    print("Старт обучения...")
-    history = trainer.fit(
-        train_loader=train_loader,
-        val_loader=val_loader,
-        epochs=10
-    )
-    print("Обучение завершено!")
+    if (mode == 1):
+        torch.save(model.state_dict(),save_path)
+        print(f"Веса успешно сохранены в {save_path}!")
+
 
 if __name__ == "__main__":
     main()
