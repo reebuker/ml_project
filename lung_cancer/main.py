@@ -7,6 +7,9 @@ from trainer import Trainer
 from evaluator import Evaluator
 
 save_path = "models/resnet18_weights.pth"
+learning_rate = 0.00005
+epochs=20
+batch_size=32
 
 def get_choice(question: str, valid_choices: list[int]) -> int:
     while True:
@@ -15,7 +18,7 @@ def get_choice(question: str, valid_choices: list[int]) -> int:
             return choice
 
 def main():
-    train_loader, val_loader, test_loader = get_data_loaders()
+    train_loader, val_loader, test_loader = get_data_loaders(batch_size=batch_size)
     model = create_model()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -29,17 +32,18 @@ def main():
     # --- Блок обучения ---
     if (mode == 1 or not os.path.exists(save_path)):
         criterion = torch.nn.CrossEntropyLoss()
-        optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
         trainer = Trainer(
             model=model, device=device, optimizer=optimizer, criterion=criterion
         )
 
         print("Старт обучения...")
+        print(f"Кол-во эпох: {epochs} | Размер батча: {batch_size} | Скорость: {learning_rate}")
         history = trainer.fit(
             train_loader=train_loader,
             val_loader=val_loader,
-            epochs=10
+            epochs=epochs
         )
         print("Обучение завершено!")
 

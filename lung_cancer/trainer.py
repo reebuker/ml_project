@@ -1,4 +1,5 @@
 import torch
+import copy
 
 class Trainer:
     def __init__(self, model, device, optimizer, criterion):
@@ -45,6 +46,9 @@ class Trainer:
 
     def fit(self, train_loader, val_loader, epochs):
         """ Основной цикл обучения """
+        best_val_loss = float("inf")
+        best_model_wts = copy.deepcopy(self.model.state_dict())
+
         for epoch in range(epochs):
             train_loss = self.train_epoch(train_loader)
             val_loss = self.val_epoch(val_loader)
@@ -52,8 +56,15 @@ class Trainer:
             self.history["train_loss"].append(train_loss)
             self.history["val_loss"].append(val_loss)
 
+            # Запоминаем лучшее состояние модели
+            if (val_loss < best_val_loss):
+                best_val_loss = val_loss
+                best_model_wts = copy.deepcopy(self.model.state_dict())
+
             print(f"Epoch {epoch+1}/{epochs} | "
                   f"Train Loss: {train_loss:.4f} | "
                   f"Val Loss: {val_loss:.4f}")
+        
+        self.model.load_state_dict(best_model_wts)
         return self.history
     

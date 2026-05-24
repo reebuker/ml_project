@@ -19,13 +19,14 @@ def get_data_loaders(batch_size=32):
     test_dir = os.path.join(dataset_path, "Data/test")
 
     train_transform = transforms.Compose([
-        transforms.Resize((224,224)),
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
 
         # Аугментация данных
         transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomRotation(degrees=15),
-        transforms.RandomAffine(degrees=0, translate=(0.05, 0.05),scale=(0.95, 1.05)),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2),
+        # transforms.RandomRotation(degrees=15),
+        # transforms.RandomAffine(degrees=0, translate=(0.05, 0.05),scale=(0.95, 1.05)),
+        # transforms.ColorJitter(brightness=0.2, contrast=0.2),
         
         # Форматируем для модели
         transforms.Lambda(lambda img: img.convert("RGB")),
@@ -34,7 +35,8 @@ def get_data_loaders(batch_size=32):
     ])
 
     normal_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
         # Форматируем для модели
         transforms.Lambda(lambda img: img.convert("RGB")),
         transforms.ToTensor(),
