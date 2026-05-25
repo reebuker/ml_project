@@ -22,9 +22,7 @@ class FeatureExtractor:
 
                 outputs = self.model(images)
 
-                features_numpy = outputs.cpu().numpy()
-
-                features_list.append(features_numpy())
+                features_list.append(outputs.cpu().numpy())
                 labels_list.append(labels.numpy())
 
         all_features = np.vstack(features_list)

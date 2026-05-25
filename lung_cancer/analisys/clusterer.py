@@ -8,10 +8,10 @@ class Clusterer:
         """ Инициализация алгоритмов кластеризации и снижения размерности """
         self.pca = PCA(n_components=30, random_state=42)
         self.kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
-        self.dbscan = DBSCAN(eps=self.dbscan_eps, min_samples=dbscan_min_samples)
-        self.tsne = TSNE(n_components=2, perplexity=30, random_state=42, n_iter=1000)
+        self.dbscan = DBSCAN(eps=dbscan_eps, min_samples=dbscan_min_samples)
+        self.tsne = TSNE(n_components=2, perplexity=30, random_state=42, max_iter=1000)
 
-    def reduce_dims_pcs(self, features):
+    def reduce_dims_pca(self, features):
         """ 1. Сжатие признаков через PCA до рекомендуемых 30 измерений """
         print(f"Сжатие признаков из формы {features.shape}...")
         features_30d = self.pca.fit_transform(features)

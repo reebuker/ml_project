@@ -5,8 +5,10 @@ from dataset import get_data_loaders
 from model import create_model
 from trainer import Trainer
 from evaluator import Evaluator
+from feature_extractor import FeatureExtractor
 
-save_path = "models/resnet50_weights.pth"
+wts_path = "models/resnet18_weights.pth"
+features_path = "features/"
 learning_rate = 0.0005
 epochs=10
 batch_size=32
@@ -30,7 +32,7 @@ def main():
     ) 
     
     # --- Блок обучения ---
-    if (mode == 1 or not os.path.exists(save_path)):
+    if (mode == 1 or not os.path.exists(wts_path)):
         criterion = torch.nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -50,7 +52,7 @@ def main():
     # --- Блок загрузки ---
     if (mode == 2):
         print("Загружаем веса модели...")
-        model.load_state_dict(torch.load(save_path))
+        model.load_state_dict(torch.load(wts_path))
 
     print("Тестируем модель...")
     evaluator = Evaluator(model=model, device=device)
@@ -63,8 +65,25 @@ def main():
     )
 
     if (mode == 1):
-        torch.save(model.state_dict(),save_path)
-        print(f"Веса успешно сохранены в {save_path}!")
+        torch.save(model.state_dict(), wts_path)
+        print(f"Веса успешно сохранены в {wts_path}!")
+    
+
+    extractor = FeatureExtractor(
+        model=model,
+        device=device
+    )
+
+    print("Выделяем признаки из тренировочных данных...")
+    features, labels = extractor.extract(dataloader=train_loader)
+
+    mode = get_choice(
+        question="Сохранить выделенные признаки / Продолжить без сохранения? [1/2]: ",
+        valid_choices=[1,2]
+    )
+
+    if (mode == 1):
+        extractor.save_to_disk(features, labels, features_path)
 
 
 if __name__ == "__main__":
