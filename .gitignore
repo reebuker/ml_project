@@ -8,6 +8,7 @@ __pycache__/
 *.pth
 *.DS_Store
 *.npy
+*.png
 
 # C extensions
 *.so

@@ -1,9 +1,11 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from clusterer import Clusterer
 from sklearn.metrics import silhouette_score, adjusted_rand_score
 
 path = "features/"
+output_dir = "plots/"
 
 def run_analysis():
     features = np.load(path + "extracted_features.npy")
@@ -32,14 +34,14 @@ def plot_clustering_result(features_2d, true_labels, kmeans_labels, dbscan_label
     Реальные диагнозы, результаты K-Means и результаты DBSCAN.
     """
     # Создаем три графика в один ряд
-    fig, axes = plt.subplot(1, 3, figsize=(20,6))
+    fig, axes = plt.subplots(1, 3, figsize=(20,6))
     
     # 1. График реальных классов 
     scatter1 = axes[0].scatter(
         features_2d[:,0], features_2d[:,1],
         c=true_labels, cmap="coolwarm"
     )
-    axes[0].set_title("1. Реальные диагнозы", font_size=14)
+    axes[0].set_title("1. Реальные диагнозы", fontsize=14)
     # Настраиваем легенду для реальных классов
     handles1, _ = scatter1.legend_elements()
     axes[0].legend(handles1, class_names, loc="upper right", title="Классы")
@@ -49,7 +51,7 @@ def plot_clustering_result(features_2d, true_labels, kmeans_labels, dbscan_label
         features_2d[:,0], features_2d[:,1],
         c=true_labels, cmap="plasma"
     )
-    axes[1].set_title("2. Кластеризация K-Means", font_size=14)
+    axes[1].set_title("2. Кластеризация K-Means", fontsize=14)
     # Настраиваем легенду для K-Means
     handles2, _ = scatter2.legend_elements()
     axes[1].legend(handles2, [f"Кластер {i}" for i in np.unique(kmeans_labels)], loc="upper right", title="Классы")
@@ -77,7 +79,13 @@ def plot_clustering_result(features_2d, true_labels, kmeans_labels, dbscan_label
         
     plt.suptitle("Анализ скрытых признаков легких (ResNet18 + PCA + t-SNE)", fontsize=16, fontweight='bold', y=1.02)
     plt.tight_layout()
-    plt.show()
+
+    os.makedirs(output_dir, exist_ok=True)
+    save_path = os.path.join(output_dir, "tsne_clustering.png")
+
+    plt.savefig(save_path, dpi=300, bbox_inches = "tight")
+    plt.close()
+    print(f"График кластеризации сохранен в файл: {save_path}")
 
 
 if (__name__ == "__main__"):
@@ -88,5 +96,5 @@ if (__name__ == "__main__"):
         true_labels=true_labels,
         kmeans_labels=kmeans_labels,
         dbscan_labels=dbscan_labels,
-        []
+        class_names=["Adenocarcinoma", "Large Cell Carcinoma", "Normal", "Squamos Cell Carcinoma"]
     )

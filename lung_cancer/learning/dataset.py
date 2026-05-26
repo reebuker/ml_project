@@ -8,6 +8,7 @@ from torchvision import datasets, transforms
 mean = [0.485, 0.456, 0.406] 
 std = [0.229, 0.224, 0.225]
 
+
 # Преобразования для изображения (резайз, обрезка, нормализация)
 def get_data_loaders(batch_size=32):
     print("Проверка наличия датасета в кеше Kaggle...")
