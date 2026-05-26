@@ -1,5 +1,8 @@
 import torch
 import copy
+import numpy as np
+import os
+from sklearn.metrics import accuracy_score
 
 class Trainer:
     def __init__(self, model, device, optimizer, criterion):
@@ -7,7 +10,12 @@ class Trainer:
         self.device = device
         self.optimizer = optimizer
         self.criterion = criterion
-        self.history = {"train_loss": [], "val_loss": []}
+        self.history = {
+            "train_loss": [], 
+            "val_loss": [],
+            "train_loss_steps": [],
+            "train_acc_steps": [] 
+        }
 
     def train_epoch(self, dataloader):
         """Одна эпоха обучения."""
@@ -22,6 +30,12 @@ class Trainer:
             loss = self.criterion(outputs, labels)
             loss.backward()
             self.optimizer.step()
+
+            # Логирование для графиков
+            self.history["train_loss_steps"].append(loss.item())
+            preds = torch.argmax(outputs, dim=1)
+            batch_acc = accuracy_score(labels.cpu().numpy(), preds.cpu().numpy())
+            self.history["train_acc_steps"].append(batch_acc * 100)
 
             running_loss += loss.item() * images.size(0)
         return running_loss / len(dataloader.dataset)
@@ -67,4 +81,13 @@ class Trainer:
         
         self.model.load_state_dict(best_model_wts)
         return self.history
-    
+
+    def save_history(self, output_dir):
+        history_matrix = np.column_stack((
+            self.history["train_loss_steps"],
+            self.history["train_acc_steps"]
+        ))
+
+        save_path = os.path.join(output_dir, "train_history.npy")
+        np.save(save_path, history_matrix) 
+        print(f"История обучения сохранена в {save_path}")

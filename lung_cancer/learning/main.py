@@ -7,8 +7,9 @@ from trainer import Trainer
 from evaluator import Evaluator
 from feature_extractor import FeatureExtractor
 
-wts_path = "models/resnet18_weights.pth"
-features_path = "features/"
+wts_dir = "data/models/"
+features_dir = "data/features/"
+history_dir = "data/history/"
 learning_rate = 0.0005
 epochs=10
 batch_size=32
@@ -32,7 +33,7 @@ def main():
     ) 
     
     # --- Блок обучения ---
-    if (mode == 1 or not os.path.exists(wts_path)):
+    if (mode == 1 or not os.path.exists(wts_dir)):
         criterion = torch.nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -65,8 +66,13 @@ def main():
     )
 
     if (mode == 1):
+        os.makedirs(wts_dir, exist_ok=True)
+        wts_path = os.path.join(wts_dir, "resnet18_weights.pth")
         torch.save(model.state_dict(), wts_path)
         print(f"Веса успешно сохранены в {wts_path}!")
+
+        os.makedirs(history_dir, exist_ok=True)
+        trainer.save_history(history_dir)
     
 
     extractor = FeatureExtractor(
@@ -83,7 +89,7 @@ def main():
     )
 
     if (mode == 1):
-        extractor.save_to_disk(features, labels, features_path)
+        extractor.save_to_disk(features, labels, features_dir)
 
 
 if __name__ == "__main__":

@@ -4,12 +4,12 @@ import matplotlib.pyplot as plt
 from clusterer import Clusterer
 from sklearn.metrics import silhouette_score, adjusted_rand_score
 
-path = "features/"
-output_dir = "plots/"
+features_dir = "data/features/"
+plots_dir = "data/plots/"
 
 def run_analysis():
-    features = np.load(path + "extracted_features.npy")
-    true_labels = np.load(path + "extracted_labels.npy")
+    features = np.load(features_dir + "extracted_features.npy")
+    true_labels = np.load(features_dir + "extracted_labels.npy")
 
     analyzer = Clusterer(n_clusters=4, dbscan_eps=0.5, dbscan_min_samples=5)
     
@@ -80,8 +80,8 @@ def plot_clustering_result(features_2d, true_labels, kmeans_labels, dbscan_label
     plt.suptitle("Анализ скрытых признаков легких (ResNet18 + PCA + t-SNE)", fontsize=16, fontweight='bold', y=1.02)
     plt.tight_layout()
 
-    os.makedirs(output_dir, exist_ok=True)
-    save_path = os.path.join(output_dir, "tsne_clustering.png")
+    os.makedirs(plots_dir, exist_ok=True)
+    save_path = os.path.join(plots_dir, "tsne_clustering.png")
 
     plt.savefig(save_path, dpi=300, bbox_inches = "tight")
     plt.close()
