@@ -87,6 +87,63 @@ def plot_clustering_result(features_2d, true_labels, kmeans_labels, dbscan_label
     plt.close()
     print(f"График кластеризации сохранен в файл: {save_path}")
 
+def learning_history():
+    """
+    Загружает историю из .npy матрицы и сохраняет графики Loss и Accuracy на диск.
+    """
+    save_path = os.path.join(plots_dir, "train_history.npy")
+    if not os.path.exists(save_path):
+        print(f"[Ошибка] Файл истории не найден по пути: {save_path}")
+        return
+
+    # 1. Загружаем матрицу истории
+    history_matrix = np.load(save_path)
+
+    # 2. Распиливаем её обратно на вектор лосса и вектор точности
+    train_loss = history_matrix[:, 0]
+    train_acc = history_matrix[:, 1]
+    
+    # Создаем массив шагов (итераций) по количеству записанных батчей
+    steps = range(1, len(train_loss) + 1)
+
+    # 3. Настраиваем сетку графиков (1 строка, 2 колонки)
+    fig, axes = plt.subplots(1, 2, figsize=(15, 5))
+
+    # --- График Левый: Лосс ---
+    # Рисуем блеклую сырую линию батчей
+    axes[0].plot(steps, train_loss, color='royalblue', alpha=0.3, label='Batch Loss')
+    # Считаем и рисуем скользящее среднее (тренд), чтобы график не сильно «зубрил»
+    if len(train_loss) > 10:
+        smooth_loss = np.convolve(train_loss, np.ones(5)/5, mode='valid')
+        axes[0].plot(range(5, len(smooth_loss) + 5), smooth_loss, color='darkblue', linewidth=2, label='Loss Trend')
+    
+    axes[0].set_title('Динамика ошибки (Train Loss Curve)', fontsize=12, fontweight='bold')
+    axes[0].set_xlabel('Итерации (Шаги оптимизатора)')
+    axes[0].set_ylabel('Значение лосса')
+    axes[0].grid(True, linestyle='--', alpha=0.5)
+    axes[0].legend()
+
+    # --- График Правый: Точность ---
+    # Рисуем блеклую линию сырой точности на батчах
+    axes[1].plot(steps, train_acc, color='lightcoral', alpha=0.3, label='Batch Acc')
+    # Добавляем тренд для точности
+    if len(train_acc) > 10:
+        smooth_acc = np.convolve(train_acc, np.ones(5)/5, mode='valid')
+        axes[1].plot(range(5, len(smooth_acc) + 5), smooth_acc, color='crimson', linewidth=2, label='Acc Trend')
+        
+    axes[1].set_title('Динамика точности (Train Accuracy Curve)', fontsize=12, fontweight='bold')
+    axes[1].set_xlabel('Итерации (Шаги оптимизатора)')
+    axes[1].set_ylabel('Точность (%)')
+    axes[1].grid(True, linestyle='--', alpha=0.5)
+    axes[1].legend()
+
+    # 4. Сохраняем готовую картинку в общую с ПК папку
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close(fig)
+    
+    print(f"[Успех] Графики обучения сгенерированы и сохранены в: {save_path}")
+
 
 if (__name__ == "__main__"):
     features_2d, true_labels, kmeans_labels, dbscan_labels = run_analysis()
@@ -98,3 +155,6 @@ if (__name__ == "__main__"):
         dbscan_labels=dbscan_labels,
         class_names=["Adenocarcinoma", "Large Cell Carcinoma", "Normal", "Squamos Cell Carcinoma"]
     )
+
+    learning_history()
+

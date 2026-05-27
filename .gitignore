@@ -5,10 +5,10 @@ __pycache__/
 
 
 # Мои кастомные
-*.pth
 *.DS_Store
-*.npy
-*.png
+# *.pth
+# *.npy
+# *.png
 
 # C extensions
 *.so
