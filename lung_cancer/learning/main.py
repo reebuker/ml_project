@@ -50,10 +50,12 @@ def main():
         )
         print("Обучение завершено!")
 
+    os.makedirs(wts_dir, exist_ok=True)
+    wts_path = os.path.join(wts_dir, "resnet18_weights.pth")
     # --- Блок загрузки ---
     if (mode == 2):
         print("Загружаем веса модели...")
-        model.load_state_dict(torch.load(wts_path))
+        model.load_state_dict(torch.load(wts_path, map_location=device))
 
     print("Тестируем модель...")
     evaluator = Evaluator(model=model, device=device)
@@ -66,8 +68,6 @@ def main():
     )
 
     if (mode == 1):
-        os.makedirs(wts_dir, exist_ok=True)
-        wts_path = os.path.join(wts_dir, "resnet18_weights.pth")
         torch.save(model.state_dict(), wts_path)
         print(f"Веса успешно сохранены в {wts_path}!")
 

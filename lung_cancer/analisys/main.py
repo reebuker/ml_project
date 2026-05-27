@@ -2,16 +2,19 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from clusterer import Clusterer
-from sklearn.metrics import silhouette_score, adjusted_rand_score
+from collections import Counter
+from sklearn.metrics import silhouette_score, adjusted_rand_score, fowlkes_mallows_score, normalized_mutual_info_score
 
-features_dir = "data/features/"
 plots_dir = "data/plots/"
+features_dir = "data/features/"
+history_dir = "data/history"
+class_names=["Adenocarcinoma", "Large Cell Carcinoma", "Normal", "Squamos Cell Carcinoma", "Noise"]
 
-def run_analysis():
+def run_analysis(class_names):
     features = np.load(features_dir + "extracted_features.npy")
     true_labels = np.load(features_dir + "extracted_labels.npy")
 
-    analyzer = Clusterer(n_clusters=4, dbscan_eps=0.5, dbscan_min_samples=5)
+    analyzer = Clusterer(n_clusters=4, dbscan_eps=8, dbscan_min_samples=10)
     
     # Сжимаем данные до 30 компонент и кластеризуем
     features_30d = analyzer.reduce_dims_pca(features)
@@ -20,10 +23,52 @@ def run_analysis():
     # Считаем формальные метрики качества разделения
     sil_score = silhouette_score(features_30d, kmeans_labels)
     ari_score = adjusted_rand_score(true_labels, kmeans_labels)
+    nmi_score = normalized_mutual_info_score(true_labels, kmeans_labels)
+    fms_score = fowlkes_mallows_score(true_labels, kmeans_labels)
 
-    print(f"\n--- Метрики кластеризации ---")
-    print(f"Silhouette Score (Качество разделения векторов): {sil_score:.4f}")
-    print(f"Adjusted Rand Score (Качество разделения векторов): {ari_score:.4f}")
+    print(f"\n--- Метрики кластеризации K-Means ---")
+    print(f"Silhouette Score: {sil_score:.4f}")
+    print(f"Adjusted Rand Score: {ari_score:.4f}")
+    print(f"Normalized Mutual Info Score: {nmi_score:.4f}")
+    print(f"Fowlkes Mallows Score: {fms_score:.4f}")
+
+    cluster_purity = {}
+    for cid in sorted(set(kmeans_labels)):
+        if cid == -1: continue
+        idxs = [i for i, lbl in enumerate(kmeans_labels) if lbl == cid]
+        assigned = [true_labels[i] for i in idxs]
+        common, count = Counter(assigned).most_common(1)[0]
+        purity = count / len(idxs)
+        cluster_purity[cid] = (common, purity)
+
+    print("\nPurity по кластерам:")
+    for cid, (cls, p) in cluster_purity.items():
+        print(f" Кластер {cid}: Majority = {cls}, Purity = {p:.2%}")
+
+    sil_score = silhouette_score(features_30d, dbscan_labels)
+    ari_score = adjusted_rand_score(true_labels, dbscan_labels)
+    nmi_score = normalized_mutual_info_score(true_labels, dbscan_labels)
+    fms_score = fowlkes_mallows_score(true_labels, dbscan_labels)
+
+    print(f"\n--- Метрики кластеризации DBSCAN ---")
+    print(f"Silhouette Score: {sil_score:.4f}")
+    print(f"Adjusted Rand Score: {ari_score:.4f}")
+    print(f"Normalized Mutual Info Score: {nmi_score:.4f}")
+    print(f"Fowlkes Mallows Score: {fms_score:.4f}")
+
+    # Считаем чистоту кластеризации
+    cluster_purity = {}
+    for cid in sorted(set(dbscan_labels)):
+        if cid == -1: continue
+        idxs = [i for i, lbl in enumerate(dbscan_labels) if lbl == cid]
+        assigned = [true_labels[i] for i in idxs]
+        common, count = Counter(assigned).most_common(1)[0]
+        purity = count / len(idxs)
+        cluster_purity[cid] = (common, purity)
+
+    print("\nPurity по кластерам:")
+    for cid, (cls, p) in cluster_purity.items():
+        print(f" Кластер {cid}: Majority = {cls}, Purity = {p:.2%}")
 
     features_2d = analyzer.prepare_tsne_2d(features_30d)
     return features_2d, true_labels, kmeans_labels, dbscan_labels
@@ -91,7 +136,7 @@ def learning_history():
     """
     Загружает историю из .npy матрицы и сохраняет графики Loss и Accuracy на диск.
     """
-    save_path = os.path.join(plots_dir, "train_history.npy")
+    save_path = os.path.join(history_dir, "train_history.npy")
     if not os.path.exists(save_path):
         print(f"[Ошибка] Файл истории не найден по пути: {save_path}")
         return
@@ -146,14 +191,14 @@ def learning_history():
 
 
 if (__name__ == "__main__"):
-    features_2d, true_labels, kmeans_labels, dbscan_labels = run_analysis()
+    features_2d, true_labels, kmeans_labels, dbscan_labels = run_analysis(class_names)
 
     plot_clustering_result(
         features_2d=features_2d,
         true_labels=true_labels,
         kmeans_labels=kmeans_labels,
         dbscan_labels=dbscan_labels,
-        class_names=["Adenocarcinoma", "Large Cell Carcinoma", "Normal", "Squamos Cell Carcinoma"]
+        class_names=class_names
     )
 
     learning_history()

@@ -4,7 +4,7 @@ from sklearn.cluster import KMeans, DBSCAN
 from sklearn.manifold import TSNE
 
 class Clusterer:
-    def __init__(self, n_clusters, dbscan_eps=0.5, dbscan_min_samples=5):
+    def __init__(self, n_clusters, dbscan_eps, dbscan_min_samples):
         """ Инициализация алгоритмов кластеризации и снижения размерности """
         self.pca = PCA(n_components=30, random_state=42)
         self.kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
