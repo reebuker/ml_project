@@ -11,7 +11,7 @@ wts_dir = "data/models/"
 features_dir = "data/features/"
 history_dir = "data/history/"
 learning_rate = 0.0002
-epochs=12
+epochs=15
 batch_size=32
 
 def get_choice(question: str, valid_choices: list[int]) -> int:

@@ -1,9 +1,11 @@
 import torch
 import torchvision
-import PIL as pil
+from PIL import Image
+import numpy as np
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.image import show_cam_on_image
 
 class_names=["Adenocarcinoma", "Large Cell Carcinoma", "Normal", "Squamos Cell Carcinoma"]
-wts_path = "data/models/resnet18_weights.pth"
 
 # Средние значения и стандартные отклонения каналов RGB (посчитаны на обычных изображениях)
 mean = [0.485, 0.456, 0.406] 
@@ -19,9 +21,14 @@ class ResnetClassifier:
         in_features = self.model.fc.in_features
         self.model.fc = torch.nn.Linear(in_features, num_classes)
 
+        # Загрузка весов
         state_dict = torch.load(wts_path, map_location=self.device)
         self.model.load_state_dict(state_dict)
         self.model.eval()
+
+        # Инициализация grad-cam для подсветки областей
+        target_layers = [self.model.layer4[-1]]
+        self.cam = GradCAM(model=self.model, target_layers=target_layers)
 
         self.transform = torchvision.transforms.Compose([
             torchvision.transforms.Resize(256),
@@ -32,8 +39,12 @@ class ResnetClassifier:
             torchvision.transforms.Normalize(mean=mean, std=std)
         ])
 
-    def predict(self, image_path: str) -> dict:
-        img = pil.Image.open(image_path)
+    def predict_and_visualize(self, image_path: str):
+        img = Image.open(image_path)
+        resized_img = img.resize((224, 224))
+
+        # Картинка в массив numpy [0,1] для grad-cam
+        rgb_img_np = np.array(resized_img, dtype=np.float32) / 255.0
         
         img_t = self.transform(img)
         img_t = torch.unsqueeze(img_t, 0)
@@ -43,7 +54,17 @@ class ResnetClassifier:
             # dim=1, так как у нас есть размерность батча [1, 4]
             probs = torch.nn.functional.softmax(outputs, dim=1)[0]
 
-        return {
-            self.classes[i]: float(prob.item()) for i, prob in enumerate(probs)
-        }
+        pred_dict = {self.class_names[i]: float(prob.item()) for i, prob in enumerate(probs)}
+
+        # Генерируем маску важности пикселей
+        grayscale_cam = self.cam(input_tensor=img_t, targets=None)
+        grayscale_cam = grayscale_cam[0, :]
+
+        # Накладываем тепловую карту на исходное изображение
+        # colormap=1 соответствует OpenCV COLORMAP_JET (синий -> зеленый -> красный)
+        # Самые важные для модели зоны окрасятся в КРАСНЫЙ цвет
+        cam_image = show_cam_on_image(rgb_img_np, grayscale_cam, use_rgb=True, colormap=1)
+        result_pil_img = Image.fromarray((cam_image*255).astype(np.uint8))
+
+        return pred_dict, result_pil_img
 
