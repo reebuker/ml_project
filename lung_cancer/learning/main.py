@@ -10,8 +10,8 @@ from feature_extractor import FeatureExtractor
 wts_dir = "data/models/"
 features_dir = "data/features/"
 history_dir = "data/history/"
-learning_rate = 0.0002
-epochs=15
+learning_rate = 0.0001
+epochs=25
 batch_size=32
 
 def get_choice(question: str, valid_choices: list[int]) -> int:

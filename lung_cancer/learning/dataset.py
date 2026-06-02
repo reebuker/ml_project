@@ -1,6 +1,5 @@
 import kagglehub
 import os
-import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
@@ -20,7 +19,7 @@ def get_data_loaders(batch_size=32):
 
     train_transform = transforms.Compose([
         transforms.Resize(256),
-        transforms.CenterCrop(224),
+        transforms.RandomCrop(224),
 
         # Аугментация данных
         transforms.RandomHorizontalFlip(p=0.5),

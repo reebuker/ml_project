@@ -1,9 +1,10 @@
 import torch
 import torchvision
-from PIL import Image
+import cv2
 import numpy as np
-from pytorch_grad_cam import GradCAM
-from pytorch_grad_cam.utils.image import show_cam_on_image
+from PIL import Image
+from pytorch_grad_cam import LayerCAM
+from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
 
 class_names=["Adenocarcinoma", "Large Cell Carcinoma", "Normal", "Squamos Cell Carcinoma"]
 
@@ -28,7 +29,8 @@ class ResnetClassifier:
 
         # Инициализация grad-cam для подсветки областей
         target_layers = [self.model.layer4[-1]]
-        self.cam = GradCAM(model=self.model, target_layers=target_layers)
+        # self.cam = GradCAM(model=self.model, target_layers=target_layers)
+        self.cam = LayerCAM(model=self.model, target_layers=target_layers)
 
         self.transform = torchvision.transforms.Compose([
             torchvision.transforms.Resize(256),
@@ -40,31 +42,42 @@ class ResnetClassifier:
         ])
 
     def predict_and_visualize(self, image_path: str):
-        img = Image.open(image_path)
-        resized_img = img.resize((224, 224))
-
-        # Картинка в массив numpy [0,1] для grad-cam
-        rgb_img_np = np.array(resized_img, dtype=np.float32) / 255.0
-        
+        img = Image.open(image_path).convert("RGB")
+        img = img.resize((224, 224))
+        rgb_img_np = np.array(img, dtype=np.float32) / 255.0
+    
         img_t = self.transform(img)
         img_t = torch.unsqueeze(img_t, 0)
 
-        with torch.no_grad():
-            outputs = self.model(img_t)
-            # dim=1, так как у нас есть размерность батча [1, 4]
-            probs = torch.nn.functional.softmax(outputs, dim=1)[0]
-
+        # Инференс модели
+        outputs = self.model(img_t)
+        probs = torch.nn.functional.softmax(outputs, dim=1)[0]
         pred_dict = {self.class_names[i]: float(prob.item()) for i, prob in enumerate(probs)}
 
-        # Генерируем маску важности пикселей
-        grayscale_cam = self.cam(input_tensor=img_t, targets=None)
-        grayscale_cam = grayscale_cam[0, :]
+        # Находим индекс класса с наибольшей вероятностью
+        highest_pred_idx = int(torch.argmax(probs).item())
 
-        # Накладываем тепловую карту на исходное изображение
-        # colormap=1 соответствует OpenCV COLORMAP_JET (синий -> зеленый -> красный)
-        # Самые важные для модели зоны окрасятся в КРАСНЫЙ цвет
-        cam_image = show_cam_on_image(rgb_img_np, grayscale_cam, use_rgb=True, colormap=1)
-        result_pil_img = Image.fromarray((cam_image*255).astype(np.uint8))
+        # 1. ТАРГЕТИНГ: Строго указываем класс для расчета градиентов
+        targets = [ClassifierOutputTarget(highest_pred_idx)]
+
+        # Генерируем маску важности для конкретного класса
+        grayscale_cam = self.cam(input_tensor=img_t, targets=targets)
+        grayscale_cam = grayscale_cam[0, :]  # Разметка [0, 1]
+
+        # 2. Мягкое медицинское подсвечивание (Вместо жесткого порога 0.8)
+        cam_heatmap = np.uint8(255 * grayscale_cam)
+        cam_heatmap = cv2.applyColorMap(cam_heatmap, cv2.COLORMAP_JET)
+    
+        # CV2 использует BGR, переводим в RGB для PIL/Tkinter
+        cam_heatmap = cv2.cvtColor(cam_heatmap, cv2.COLOR_BGR2RGB)
+        cam_heatmap = np.float32(cam_heatmap) / 255.0
+
+        # Смешиваем оригинальный КТ-снимок и тепловую карту (0.6 исходник, 0.4 подсветка)
+        cam_image = 0.6 * rgb_img_np + 0.4 * cam_heatmap
+        # Защита от выхода за границы [0, 1] после сложения
+        cam_image = np.clip(cam_image, 0, 1)
+
+        # Конвертируем обратно в изображение для Tkinter
+        result_pil_img = Image.fromarray((cam_image * 255).astype(np.uint8))
 
         return pred_dict, result_pil_img
-
