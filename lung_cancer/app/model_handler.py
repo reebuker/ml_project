@@ -1,4 +1,5 @@
 import torch
+import os, sys
 import torchvision
 import cv2
 import numpy as np
@@ -12,6 +13,11 @@ class_names=["Adenocarcinoma", "Large Cell Carcinoma", "Normal", "Squamos Cell C
 mean = [0.485, 0.456, 0.406] 
 std = [0.229, 0.224, 0.225]
 
+def get_resource_path(relative_path):
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
 class ResnetClassifier:
     def __init__(self, wts_path, num_classes):
         self.class_names = class_names
@@ -23,6 +29,7 @@ class ResnetClassifier:
         self.model.fc = torch.nn.Linear(in_features, num_classes)
 
         # Загрузка весов
+        wts_path = get_resource_path(wts_path)
         state_dict = torch.load(wts_path, map_location=self.device)
         self.model.load_state_dict(state_dict)
         self.model.eval()
